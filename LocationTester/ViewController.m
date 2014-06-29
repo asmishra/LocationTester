@@ -18,20 +18,26 @@
 @end
 
 @implementation ViewController
-
-CLLocationManager *locationManager;
+{
+    CLLocationManager *locationManager;
+    CLGeocoder *geocoder;
+    CLPlacemark *placemark;
+}
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     locationManager = [[CLLocationManager alloc] init];
+    geocoder = [[CLGeocoder alloc] init];
+
 }
 
 - (IBAction)getLocation:(id)sender
 {
     locationManager.delegate = self;
-    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters;
+//    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
     [locationManager startUpdatingLocation]; //allows access to GPS
 }
 
@@ -51,9 +57,28 @@ CLLocationManager *locationManager;
     
     if(currentLocation != nil)
     {
-        self.latitudeLabel.text = [NSString stringWithFormat:@"Latitude :%3f", currentLocation.coordinate.latitude];
-        self.longitudeLabel.text = [NSString stringWithFormat:@"Longitude :%3f", currentLocation.coordinate.longitude];
+        self.latitudeLabel.text = [NSString stringWithFormat:@"Latitude :%3.3f", currentLocation.coordinate.latitude];
+        self.longitudeLabel.text = [NSString stringWithFormat:@"Longitude :%3.3f", currentLocation.coordinate.longitude];
     }
+    
+    // Reverse Geocoding
+    NSLog(@"Resolving the Address");
+    [geocoder reverseGeocodeLocation:currentLocation completionHandler:^(NSArray *placemarks, NSError *error) {
+        NSLog(@"Found placemarks: %@, error: %@", placemarks, error);
+        if (error == nil && [placemarks count] > 0) {
+            placemark = [placemarks lastObject];
+
+            self.addressLabel.text = [NSString stringWithFormat:@"%@ %@\n%@ %@\n%@\n%@",
+                                 placemark.subThoroughfare, placemark.thoroughfare,
+                                 placemark.postalCode, placemark.locality,
+                                 placemark.administrativeArea,
+                                 placemark.country];
+ 
+            //self.addressLabel.text = [NSString stringWithFormat:@"%@", placemark.description];
+        } else {
+            NSLog(@"%@", error.debugDescription);
+        }
+    } ];
     
 }
 
